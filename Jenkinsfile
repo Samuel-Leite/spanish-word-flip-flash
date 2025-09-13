@@ -86,11 +86,11 @@ pipeline {
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         icon: '',
-                        keepAll: true
+                        keepAll: true,
                         reportDir: 'reports-e2e/html',
                         reportFiles: 'index.html',
                         reportName: 'Playwright HTML Report',
-                        reportTitles: ''
+                        reportTitles: '',
                         useWrapperFileDirectly: true
                     ])
                     junit stdioRetention: 'ALL', testResults: 'reports-e2e/junit.xml'
