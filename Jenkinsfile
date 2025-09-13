@@ -5,10 +5,6 @@ pipeline {
         ansiColor('xterm')
     }
 
-    environment {
-        NODE_ENV = 'test'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -16,45 +12,38 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('build') {
             agent {
                 docker {
                     image 'node:22-alpine'
+                    reuseNode true
                 }
             }
             steps {
                 sh 'npm ci'
-            }
-        }
-
-        stage('Build') {
-            agent {
-                docker {
-                    image 'node:22-alpine'
-                }
-            }
-            steps {
                 sh 'npm run build'
             }
         }
 
-        stage('Test') {
+        stage('test') {
             parallel {
-                stage('Unit Tests') {
+                stage('unit tests') {
                     agent {
                         docker {
                             image 'node:22-alpine'
+                            reuseNode true
                         }
                     }
                     steps {
+                        // Unit tests with Vitest
                         sh 'npx vitest run --reporter=verbose'
                     }
                 }
-
-                stage('Integration Tests') {
+                stage('integration tests') {
                     agent {
                         docker {
                             image 'mcr.microsoft.com/playwright:v1.54.2-jammy'
+                            reuseNode true
                         }
                     }
                     steps {
@@ -65,24 +54,32 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('deploy') {
             agent {
                 docker {
                     image 'alpine'
                 }
             }
             steps {
+                // Mock deployment which does nothing
                 echo 'Mock deployment was successful!'
             }
         }
-    }
 
-    post {
-        failure {
-            echo 'Pipeline failed. Check logs for details.'
-        }
-        success {
-            echo 'Pipeline completed successfully!'
+        stage('e2e') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.54.2-jammy'
+                    reuseNode true
+                }
+            }
+            environment {
+                E2E_BASE_URL = 'https://spanish-cards.netlify.app/'
+            }
+            steps {
+                sh 'npx playwright install'
+                sh 'npx playwright test'
+            }
         }
     }
 }
