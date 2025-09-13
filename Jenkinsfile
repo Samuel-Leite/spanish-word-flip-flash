@@ -5,10 +5,25 @@ pipeline {
         ansiColor('xterm')
     }
 
+    environment {
+        NODE_ENV = 'test'
+    }
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            agent {
+                docker {
+                    image 'node:22-alpine'
+                }
+            }
+            steps {
+                sh 'npm ci'
             }
         }
 
@@ -19,7 +34,6 @@ pipeline {
                 }
             }
             steps {
-                sh 'npm ci'
                 sh 'npm run build'
             }
         }
@@ -36,14 +50,15 @@ pipeline {
                         sh 'npx vitest run --reporter=verbose'
                     }
                 }
-                stage('integration Tests') {
+
+                stage('Integration Tests') {
                     agent {
                         docker {
                             image 'mcr.microsoft.com/playwright:v1.54.2-jammy'
-                            reuseNode true
                         }
                     }
                     steps {
+                        sh 'npx playwright install'
                         sh 'npx playwright test'
                     }
                 }
